@@ -65,57 +65,30 @@ namespace AlphaMinerTest1
         {
             get
             {
-                var firstEventIndex = ActivityToMatrixIndex(activity1);
-                var secondEventIndex = ActivityToMatrixIndex(activity2);
+                var firstEventIndex = ActivityToIndex(activity1);
+                var secondEventIndex = ActivityToIndex(activity2);
 
                 return _table[firstEventIndex, secondEventIndex];
             }
             private set
             {
-                var firstEventIndex = ActivityToMatrixIndex(activity1);
-                var secondEventIndex = ActivityToMatrixIndex(activity2);
+                var firstEventIndex = ActivityToIndex(activity1);
+                var secondEventIndex = ActivityToIndex(activity2);
 
                 _table[firstEventIndex, secondEventIndex] = value;
             }
         }
-        
-        public bool AreActivitiesConnected(IEnumerable<string> inputActivities, IEnumerable<string> outputActivities)
-        {
-            //(A,B), A = first, B = second
-            var arrayFirst = inputActivities.ToArray();
-            var arraySecond = outputActivities.ToArray();
 
-            // For every a1,a2 in A => a1#a2
-            for (int i = 0; i < arrayFirst.Length - 1; i++)
-            {
-                for (int j = i + 1; j < arrayFirst.Length; j++)
-                {
-                    if (this[arrayFirst[i], arrayFirst[j]] != RelationType.NotConnected)
-                    {
-                        return false;
-                    }
-                }
-            }
+        public RelationType this[int activity1, int activity2] => _table[activity1, activity2];
 
-            // For every b1, b2 in B => b1#b2
-            for (int i = 0; i < arraySecond.Length - 1; i++)
-            {
-                for (int j = i + 1; j < arraySecond.Length; j++)
-                {
-                    if (this[arraySecond[i], arraySecond[j]] != RelationType.NotConnected)
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            // For every a in A and b in B => a > b in f
-            return arrayFirst.All(first => arraySecond.All(second => this[first, second] == RelationType.Precedes));
-        }
-
-        private int ActivityToMatrixIndex(string activity)
+        public int ActivityToIndex(string activity)
         {
             return Array.IndexOf(_activities, activity);
+        }
+
+        public string IndexToActivity(int index)
+        {
+            return _activities[index];
         }
     }
 }

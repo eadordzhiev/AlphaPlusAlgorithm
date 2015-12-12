@@ -106,18 +106,18 @@ namespace AlphaMinerTest1
         {
             return events.Select(@event => @event.Activity).Distinct();
         }
-        
+
         private static IEnumerable<Tuple<string[], string[]>> FindMaximalSet(EventLog log, IEnumerable<string> transitions)
         {
             var footprintTable = new FootprintTable(log);
-            var powerSet = transitions.PowerSet();
+            var powerSet = transitions.Select(footprintTable.ActivityToIndex).PowerSet();
 
             var pairsSequence =
                 from setA in powerSet
                 from setB in powerSet
                 where setA.Any() && setB.Any()
-                where footprintTable.AreActivitiesConnected(setA, setB)
-                select new Tuple<string[], string[]>(setA, setB);
+                where AreActivitiesConnected(setA, setB, footprintTable)
+                select new Tuple<int[], int[]>(setA, setB);
 
             // To prevent multiple enumeration
             var pairs = pairsSequence.ToArray();
@@ -127,10 +127,44 @@ namespace AlphaMinerTest1
                 from place2 in pairs
                 where !Equals(place1, place2)
                 where place1.Item1.ContainsAll(place2.Item1)
-                && place1.Item2.ContainsAll(place2.Item2)
+                    && place1.Item2.ContainsAll(place2.Item2)
                 select place2;
 
-            return pairs.Except(nonMaximalPlaces).ToArray();
+            return pairs
+                .Except(nonMaximalPlaces)
+                .Select(pair => new Tuple<string[], string[]>(
+                    pair.Item1.Select(index => footprintTable.IndexToActivity(index)).ToArray(),
+                    pair.Item2.Select(index => footprintTable.IndexToActivity(index)).ToArray()));
+        }
+
+        private static bool AreActivitiesConnected(int[] inputActivityIndices, int[] outputActivityIndices, FootprintTable footprintTable)
+        {
+            // For every a1,a2 in A => a1#a2
+            for (int i = 0; i < inputActivityIndices.Length - 1; i++)
+            {
+                for (int j = i + 1; j < inputActivityIndices.Length; j++)
+                {
+                    if (footprintTable[inputActivityIndices[i], inputActivityIndices[j]] != RelationType.NotConnected)
+                    {
+                        return false;
+                    }
+                }
+            }
+            
+            // For every b1, b2 in B => b1#b2
+            for (int i = 0; i < outputActivityIndices.Length - 1; i++)
+            {
+                for (int j = i + 1; j < outputActivityIndices.Length; j++)
+                {
+                    if (footprintTable[outputActivityIndices[i], outputActivityIndices[j]] != RelationType.NotConnected)
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            // For every a in A and b in B => a > b in f
+            return inputActivityIndices.All(first => outputActivityIndices.All(second => footprintTable[first, second] == RelationType.Precedes));
         }
     }
 }
