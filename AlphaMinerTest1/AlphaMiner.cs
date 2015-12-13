@@ -115,7 +115,7 @@ namespace AlphaMinerTest1
             var pairsSequence =
                 from setA in powerSet
                 from setB in powerSet
-                where setA.Any() && setB.Any()
+                where setA.Length > 0 && setB.Length > 0
                 where AreActivitiesConnected(setA, setB, footprintTable)
                 select new { setA, setB };
 
