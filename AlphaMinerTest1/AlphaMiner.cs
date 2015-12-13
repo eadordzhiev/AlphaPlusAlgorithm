@@ -14,7 +14,7 @@ namespace AlphaMinerTest1
             var transitions = GetActivitiesFromEvents(log.Traces.SelectMany(trace => trace.Events))
                 .Except(lengthOneLoops.Select(loop => loop.Activity))
                 .ToList();
-            
+
             // Alpha algorithm
             var maximalSet = FindMaximalSet(log, transitions).ToArray();
 
@@ -40,7 +40,7 @@ namespace AlphaMinerTest1
             places.Add(outPlace);
             var endTransitions = GetActivitiesFromEvents(log.Traces.Select(trace => trace.Events.Last()));
             arcs.AddRange(endTransitions.Select(transition => new Arc(transition, outPlace)));
-            
+
             // Post-processing (Alpha+)
             foreach (var loop in lengthOneLoops)
             {
@@ -88,7 +88,7 @@ namespace AlphaMinerTest1
                                 break;
                             }
                         }
-                        
+
                         result.Add(new LoopOfLengthOne(
                             activity: events[i].Activity,
                             precedingActivity: events[loopStart - 1].Activity,
@@ -117,7 +117,7 @@ namespace AlphaMinerTest1
                 from setB in powerSet
                 where setA.Any() && setB.Any()
                 where AreActivitiesConnected(setA, setB, footprintTable)
-                select new Tuple<int[], int[]>(setA, setB);
+                select new { setA, setB };
 
             // To prevent multiple enumeration
             var pairs = pairsSequence.ToArray();
@@ -125,16 +125,16 @@ namespace AlphaMinerTest1
             var nonMaximalPlaces =
                 from place1 in pairs
                 from place2 in pairs
-                where !Equals(place1, place2)
-                where place1.Item1.ContainsAll(place2.Item1)
-                    && place1.Item2.ContainsAll(place2.Item2)
+                where place1 != place2
+                where place1.setA.ContainsAll(place2.setA)
+                    && place1.setB.ContainsAll(place2.setB)
                 select place2;
 
             return pairs
                 .Except(nonMaximalPlaces)
                 .Select(pair => new Tuple<string[], string[]>(
-                    pair.Item1.Select(index => footprintTable.IndexToActivity(index)).ToArray(),
-                    pair.Item2.Select(index => footprintTable.IndexToActivity(index)).ToArray()));
+                    pair.setA.Select(index => footprintTable.IndexToActivity(index)).ToArray(),
+                    pair.setB.Select(index => footprintTable.IndexToActivity(index)).ToArray()));
         }
 
         private static bool AreActivitiesConnected(int[] inputActivityIndices, int[] outputActivityIndices, FootprintTable footprintTable)
@@ -150,7 +150,7 @@ namespace AlphaMinerTest1
                     }
                 }
             }
-            
+
             // For every b1, b2 in B => b1#b2
             for (int i = 0; i < outputActivityIndices.Length - 1; i++)
             {
