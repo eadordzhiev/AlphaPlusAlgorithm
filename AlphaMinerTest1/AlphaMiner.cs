@@ -117,7 +117,7 @@ namespace AlphaMinerTest1
                 from setB in powerSet
                 where setA.Any() && setB.Any()
                 where AreActivitiesConnected(setA, setB, footprintTable)
-                select new { setA, setB };
+                select new Tuple<int[], int[]>(setA, setB);
 
             // To prevent multiple enumeration
             var pairs = pairsSequence.ToArray();
@@ -126,15 +126,15 @@ namespace AlphaMinerTest1
                 from place1 in pairs
                 from place2 in pairs
                 where !Equals(place1, place2)
-                where place1.setA.ContainsAll(place2.setA)
-                    && place1.setB.ContainsAll(place2.setB)
+                where place1.Item1.ContainsAll(place2.Item1)
+                    && place1.Item2.ContainsAll(place2.Item2)
                 select place2;
 
             return pairs
                 .Except(nonMaximalPlaces)
                 .Select(pair => new Tuple<string[], string[]>(
-                    pair.setA.Select(index => footprintTable.IndexToActivity(index)).ToArray(),
-                    pair.setB.Select(index => footprintTable.IndexToActivity(index)).ToArray()));
+                    pair.Item1.Select(index => footprintTable.IndexToActivity(index)).ToArray(),
+                    pair.Item2.Select(index => footprintTable.IndexToActivity(index)).ToArray()));
         }
 
         private static bool AreActivitiesConnected(int[] inputActivityIndices, int[] outputActivityIndices, FootprintTable footprintTable)
